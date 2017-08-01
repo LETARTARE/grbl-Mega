@@ -13,6 +13,8 @@ First of all I would like to thank those who allowed me to start this project:
 
 For use see the [Wiki](https://github.com/LETARTARE/grblQ-Mega-4axes/wiki)
 
+For **QrblQ** releases see the [releases](https://github.com/LETARTARE/grblQ-Mega-4axes/releases)
+
 ***
 For Grbl1.1 click the `Release` tab to download pre-compiled `.hex` files or just [click here](https://github.com/gnea/grbl/releases)
 ***
