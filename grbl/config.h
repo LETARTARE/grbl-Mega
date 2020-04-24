@@ -38,6 +38,9 @@
 #define DEFAULTS_FOURTH_AXIS
 #define CPU_MAP_2560_FOURTH_AXIS
 ///
+// To use with RAMPS 1.4 Board, comment out the above defines and uncomment the next two defines
+//#define DEFAULTS_RAMPS_BOARD
+//#define CPU_MAP_2560_RAMPS_BOARD
 
 // Serial baud rate
 // #define BAUD_RATE 230400
@@ -104,11 +107,17 @@
 // on separate pin, but homed in one cycle. Also, it should be noted that the function of hard limits
 // will not be affected by pin sharing.
 // NOTE: Defaults are set for a traditional 3-axis CNC machine. Z-axis first to clear, followed by X & Y.
-#define HOMING_CYCLE_0 (1<<Z_AXIS)  // REQUIRED: First move Z to clear workspace.
-#define HOMING_CYCLE_1 (1<<Y_AXIS)  // OPTIONAL: Then move X,Y at the same time.
-#define HOMING_CYCLE_2 (1<<X_AXIS)  // OPTIONAL: Uncomment and add axes mask to enable
-#ifdef AXIS_Q_EXIST
-	#define HOMING_CYCLE_3 (1<<Q_AXIS)  // fourth axis in [A,B,C,U,V,W]
+#ifdef DEFAULTS_RAMPS_BOARD
+	  #define HOMING_CYCLE_0 (1<<X_AXIS)   // Home X axis
+	  #define HOMING_CYCLE_1 (1<<Y_AXIS)   // Home Y axis
+	  #define HOMING_CYCLE_2 (1<<Z_AXIS)   // OPTIONAL: Home Z axis
+#else
+	#define HOMING_CYCLE_0 (1<<Z_AXIS)  // REQUIRED: First move Z to clear workspace.
+	#define HOMING_CYCLE_1 (1<<Y_AXIS)  // OPTIONAL: Then move X,Y at the same time.
+	#define HOMING_CYCLE_2 (1<<X_AXIS)  // OPTIONAL: Uncomment and add axes mask to enable
+	#ifdef AXIS_Q_EXIST
+		#define HOMING_CYCLE_3 (1<<Q_AXIS)  // fourth axis in [A,B,C,U,V,W]
+	#endif
 #endif
 
 // NOTE: The following are two examples to setup homing for 2-axis machines.
@@ -202,6 +211,12 @@
 // normally-open(NO) and normally-closed(NC) switches installed on their machine.
 // NOTE: PLEASE DO NOT USE THIS, unless you have a situation that needs it.
 // #define INVERT_LIMIT_PIN_MASK ((1<<X_LIMIT_BIT)|(1<<Y_LIMIT_BIT)) // Default disabled. Uncomment to enable.
+#ifdef DEFAULTS_RAMPS_BOARD
+  // Only enable the following line if you have - (min) limit switches attached
+  //#define INVERT_MIN_LIMIT_PIN_MASK ((1<<X_AXIS) | (1<<Y_AXIS) | (1<<Z_AXIS))
+  // Only enable the following line if you have + (max) limit switches attached
+  //#define INVERT_MAX_LIMIT_PIN_MASK ((1<<X_AXIS) | (1<<Y_AXIS) | (1<<Z_AXIS))
+#endif
 
 // Inverts the spindle enable pin from low-disabled/high-enabled to low-enabled/high-disabled. Useful
 // for some pre-built electronic boards.
@@ -269,6 +284,7 @@
 #define REPORT_FIELD_WORK_COORD_OFFSET // Default enabled. Comment to disable.
 #define REPORT_FIELD_OVERRIDES // Default enabled. Comment to disable.
 #define REPORT_FIELD_LINE_NUMBERS // Default enabled. Comment to disable.
+#define REPORT_FIELD_LINE_NUMBERS_WITH_OK  // Default enabled. Comment to disable.
 
 // Some status report data isn't necessary for realtime, only intermittently, because the values don't
 // change often. The following macros configures how many times a status report needs to be called before
@@ -340,6 +356,13 @@
 // NOTE: Compute duty cycle at the minimum PWM by this equation: (% duty cycle)=(SPINDLE_PWM_MIN_VALUE/255)*100
 // #define SPINDLE_PWM_MIN_VALUE 5 // Default disabled. Uncomment to enable. Must be greater than zero. Integer (1-255).
 
+// Alters the behavior of the spindle enable pin. By default, Grbl will not disable the enable pin if
+// spindle speed is zero and M3/4 is active, but still sets the PWM output to zero. This allows the users
+// to know if the spindle is active and use it as an additional control input. However, in some use cases,
+// a user may want the enable pin to disable with a zero spindle speed and re-enable when spindle speed is
+// greater than zero. This option does that.
+// #define SPINDLE_ENABLE_OFF_WITH_ZERO_SPEED // Default disabled. Uncomment to enable.
+
 // With this enabled, Grbl sends back an echo of the line it has received, which has been pre-parsed (spaces
 // removed, capitalized letters, no comments) and is to be immediately executed by Grbl. Echoes will not be
 // sent upon a line buffer overflow, but should for all normal lines sent to Grbl. For example, if a user
@@ -347,7 +370,7 @@
 // NOTE: Only use this for debugging purposes!! When echoing, this takes up valuable resources and can effect
 // performance. If absolutely needed for normal operation, the serial write buffer should be greatly increased
 // to help minimize transmission waiting within the serial write protocol.
-// #define REPORT_ECHO_LINE_RECEIVED // Default disabled. Uncomment to enable.
+#define REPORT_ECHO_LINE_RECEIVED // Default disabled. Uncomment to enable.
 
 // Minimum planner junction speed. Sets the default minimum junction speed the planner plans to at
 // every buffer block junction, except for starting from rest and end of the buffer, which are always
@@ -547,7 +570,7 @@
 // NOTE: Still a work-in-progress. Machine coordinates must be in all negative space and
 // does not work with HOMING_FORCE_SET_ORIGIN enabled. Parking motion also moves only in
 // positive direction.
-// #define PARKING_ENABLE  // Default disabled. Uncomment to enable
+//#define PARKING_ENABLE  // Default disabled. Uncomment to enable
 
 // Configure options for the parking motion, if enabled.
 #define PARKING_AXIS Z_AXIS // Define which axis that performs the parking motion
@@ -557,6 +580,16 @@
 #define PARKING_PULLOUT_INCREMENT 5.0 // Spindle pull-out and plunge distance in mm. Incremental distance.
                                       // Must be positive value or equal to zero.
 
+// Enables a special set of M-code commands that enables and disables the parking motion.
+// These are controlled by `M56`, `M56 P1`, or `M56 Px` to enable and `M56 P0` to disable.
+// The command is modal and will be set after a planner sync. Since it is g-code, it is
+// executed in sync with g-code commands. It is not a real-time command.
+// NOTE: PARKING_ENABLE is required. By default, M56 is active upon initialization. Use
+// DEACTIVATE_PARKING_UPON_INIT to set M56 P0 as the power-up default.
+// #define ENABLE_PARKING_OVERRIDE_CONTROL   // Default disabled. Uncomment to enable
+// #define DEACTIVATE_PARKING_UPON_INIT // Default disabled. Uncomment to enable.
+
+// This option will automatically disab
 // Enables and configures Grbl's sleep mode feature. If the spindle or coolant are powered and Grbl
 // is not actively moving or receiving any commands, a sleep timer will start. If any data or commands
 // are received, the sleep timer will reset and restart until the above condition are not satisfied.
@@ -573,6 +606,31 @@
 // be reenabled by disabling the spindle stop override, if needed. This is purely a safety feature
 // to ensure the laser doesn't inadvertently remain powered while at a stop and cause a fire.
 #define DISABLE_LASER_DURING_HOLD // Default enabled. Comment to disable.
+
+// Enables a piecewise linear model of the spindle PWM/speed output. Requires a solution by the
+// 'fit_nonlinear_spindle.py' script in the /doc/script folder of the repo. See file comments
+// on how to gather spindle data and run the script to generate a solution.
+// #define ENABLE_PIECEWISE_LINEAR_SPINDLE  // Default disabled. Uncomment to enable.
+
+// N_PIECES, RPM_MAX, RPM_MIN, RPM_POINTxx, and RPM_LINE_XX constants are all set and given by
+// the 'fit_nonlinear_spindle.py' script solution. Used only when ENABLE_PIECEWISE_LINEAR_SPINDLE
+// is enabled. Make sure the constant values are exactly the same as the script solution.
+// NOTE: When N_PIECES < 4, unused RPM_LINE and RPM_POINT defines are not required and omitted.
+#define N_PIECES 4  // Integer (1-4). Number of piecewise lines used in script solution.
+#define RPM_MAX  11686.4  // Max RPM of model. $30 > RPM_MAX will be limited to RPM_MAX.
+#define RPM_MIN  202.5    // Min RPM of model. $31 < RPM_MIN will be limited to RPM_MIN.
+#define RPM_POINT12  6145.4  // Used N_PIECES >=2. Junction point between lines 1 and 2.
+#define RPM_POINT23  9627.8  // Used N_PIECES >=3. Junction point between lines 2 and 3.
+#define RPM_POINT34  10813.9 // Used N_PIECES = 4. Junction point between lines 3 and 4.
+#define RPM_LINE_A1  3.197101e-03  // Used N_PIECES >=1. A and B constants of line 1.
+#define RPM_LINE_B1  -3.526076e-1
+#define RPM_LINE_A2  1.722950e-2   // Used N_PIECES >=2. A and B constants of line 2.
+#define RPM_LINE_B2  8.588176e+01
+#define RPM_LINE_A3  5.901518e-02  // Used N_PIECES >=3. A and B constants of line 3.
+#define RPM_LINE_B3  4.881851e+02
+#define RPM_LINE_A4  1.203413e-01  // Used N_PIECES = 4. A and B constants of line 4.
+#define RPM_LINE_B4  1.151360e+03
+
 
 /* ---------------------------------------------------------------------------------------
    OEM Single File Configuration Option

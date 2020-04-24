@@ -41,10 +41,9 @@
 // unless invert_feed_rate is true. Then the feed_rate means that the motion should be completed in
 // (1 minute)/feed_rate time.
 void mc_line(float *target, plan_line_data_t *pl_data);
-///
 
-// Execute an arc in offset mode format. position == current xyzq, target == target xyzq,
-// offset == offset from current xyzq, axis_XXX defines circle plane in tool space, axis_linear is
+// Execute an arc in offset mode format. position == current xyz, target == target xyz,
+// offset == offset from current xyz, axis_XXX defines circle plane in tool space, axis_linear is
 // the direction of helical travel, radius == circle radius, is_clockwise_arc boolean. Used
 // for vector transformation direction.
 /// +Q : axis_rotary
@@ -59,6 +58,9 @@ void mc_homing_cycle(uint8_t cycle_mask);
 
 // Perform tool length probe cycle. Requires probe switch.
 uint8_t mc_probe_cycle(float *target, plan_line_data_t *pl_data, uint8_t parser_flags);
+
+// Handles updating the override control state.
+void mc_override_ctrl_update(uint8_t override_state);
 
 // Plans and executes the single special motion case for parking. Independent of main planner buffer.
 void mc_parking_motion(float *parking_target, plan_line_data_t *pl_data);

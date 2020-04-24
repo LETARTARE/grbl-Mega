@@ -37,7 +37,7 @@
 
 	#define LINEAR false	//  false  -> linear Q = U or V or W
 	#define ROTARY true		//  true -> rotary Q = A or B or C
-/// ====> You must choose only one type, but not both  <====
+/// ====> YOU MUST CHOOSE NONE (XYZ only) or ONLY ONE TYPE, but NOT both  <====
 	//#define AXIS_Q_TYPE 	LINEAR  	//  false -> linear
 	#define AXIS_Q_TYPE 	ROTARY 		//  true  -> rotary
 
@@ -49,13 +49,15 @@
 		#define AXIS_V  5
 		#define AXIS_W  6
 	// linear axis
-		#define AXIS_Q 	AXIS_U	/// ==> You must choose your fourth linear axis  <==
+		#define AXIS_Q 	AXIS_W	/// ==> You must choose your fourth linear axis  <==
 	#elif AXIS_Q_TYPE == ROTARY
 		#define AXIS_A   1
 		#define AXIS_B   2
 		#define AXIS_C   3
 	// rotary axis
-		#define AXIS_Q 	AXIS_A /// ==> You must choose your rotary fourth axis  <==
+		///////////////////////////////////////////////////////////////////////////
+		#define AXIS_Q 	AXIS_C /// ==> You must choose your rotary fourth axis  <==
+		///////////////////////////////////////////////////////////////////////////
 	#else
 		/// -> (X, Y, Z)
 		#error "The macro "AXIS_Q" is not initialized"

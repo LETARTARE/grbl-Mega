@@ -121,8 +121,20 @@ static void report_util_float_setting(uint8_t n, float val, uint8_t n_decimal) {
 void report_status_message(uint8_t status_code)
 {
   switch(status_code) {
-    case STATUS_OK: // STATUS_OK
-      printPgmString(PSTR("ok\r\n")); break;
+    case STATUS_OK: // STATUS_OK = 0
+    	printPgmString(PSTR("ok"));
+	/// +Q
+	#ifdef REPORT_FIELD_LINE_NUMBERS
+		#ifdef REPORT_FIELD_LINE_NUMBERS_WITH_OK
+			if (gc_state.line_number)
+			{
+				printPgmString(PSTR(":"));
+				printInteger(gc_state.line_number);
+			}
+		#endif
+	#endif
+		report_util_line_feed();
+		break;
     default:
       printPgmString(PSTR("error:"));
       print_uint8_base10(status_code);
@@ -178,7 +190,27 @@ void report_feedback_message(uint8_t message_code)
 // Welcome message
 void report_init_message()
 {
-  printPgmString(PSTR("\r\nGrbl " GRBL_VERSION " ['$' for help]\r\n"));
+#ifdef AXIS_Q
+	#if AXIS_Q_TYPE == LINEAR
+		#if AXIS_Q == AXIS_U
+			printPgmString(PSTR("\r\nGrblU " GRBL_VERSION " ['$' for help]\r\n"));
+		#elif	AXIS_Q == AXIS_V
+			printPgmString(PSTR("\r\nGrblV " GRBL_VERSION " ['$' for help]\r\n"));
+		#elif	AXIS_Q == AXIS_W
+			printPgmString(PSTR("\r\nGrblW " GRBL_VERSION " ['$' for help]\r\n"));
+		#endif
+	#else
+		#if AXIS_Q == AXIS_A
+			printPgmString(PSTR("\r\nGrblA " GRBL_VERSION " ['$' for help]\r\n"));
+		#elif	AXIS_Q == AXIS_B
+			printPgmString(PSTR("\r\nGrblB " GRBL_VERSION " ['$' for help]\r\n"));
+		#elif	AXIS_Q == AXIS_C
+			printPgmString(PSTR("\r\nGrblC " GRBL_VERSION " ['$' for help]\r\n"));
+		#endif
+	#endif
+#else
+	printPgmString(PSTR("\r\nGrblQ " GRBL_VERSION " ['$' for help]\r\n")) ;
+#endif
 }
 
 // Grbl help message
@@ -390,10 +422,13 @@ void report_build_info(char *line)
     serial_write('H');
   #endif
   #ifdef LIMITS_TWO_SWITCHES_ON_AXES
-    serial_write('L');
+    serial_write('T');
   #endif
   #ifdef ALLOW_FEED_OVERRIDE_DURING_PROBE_CYCLES
     serial_write('A');
+  #endif
+  #ifdef USE_SPINDLE_DIR_AS_ENABLE_PIN
+    serial_write('D');
   #endif
  #ifdef SPINDLE_ENABLE_OFF_WITH_ZERO_SPEED
     serial_write('0');
@@ -426,16 +461,15 @@ void report_build_info(char *line)
  #ifdef HOMING_INIT_LOCK
     serial_write('L');
  #endif
- #ifdef AXIS_Q
-	#if (AXIS_Q == 0)
-		serial_write('0');
-	#else
-		print_uint8_base10(AXIS_Q);
-	#endif
+ #ifdef REPORT_ECHO_LINE_RECEIVED
+     serial_write('=');
  #endif
 ///
   // NOTE: Compiled values, like override increments/max/min values, may be added at some point later.
-  // These will likely have a comma delimiter to separate them.
+  serial_write(',');
+  print_uint8_base10(BLOCK_BUFFER_SIZE-1);
+  serial_write(',');
+  print_uint8_base10(RX_BUFFER_SIZE);
 
   report_util_feedback_line_feed();
 }
@@ -477,7 +511,6 @@ void report_realtime_status()
 					{ serial_write('0'); } // Ready to resume
 				else
 					{ serial_write('1'); } // Actively holding
-			//break;  // ??
 			}
 			break;
 		// Continues to print jog state during jog cancel.
@@ -578,20 +611,21 @@ void report_realtime_status()
 				if (bit_istrue(lim_pin_state,bit(Z_AXIS))) { serial_write('Z'); }
 	/// +Q
 			#if (AXIS_Q > 0) && defined(AXIS_Q_EXIST)
-				if (bit_istrue(lim_pin_state,bit(Q_AXIS))) { serial_write(
-				#if AXIS_Q == AXIS_A
-					'A'
-				#elif  AXIS_Q == AXIS_B
-					'B'
-				#elif  AXIS_Q == AXIS_C
-					'C'
-				#elif  AXIS_Q == AXIS_U
-					'U'
-				#elif  AXIS_Q == AXIS_V
-					'V'
-				#elif  AXIS_Q == AXIS_W
-					'W'
-				#endif
+				if (bit_istrue(lim_pin_state,bit(Q_AXIS))) {
+					serial_write(
+					#if (AXIS_Q == AXIS_A)
+						'A'
+					#elif  AXIS_Q == AXIS_B
+						'B'
+					#elif  AXIS_Q == AXIS_C
+						'C'
+					#elif  AXIS_Q == AXIS_U
+						'U'
+					#elif  AXIS_Q == AXIS_V
+						'V'
+					#elif  AXIS_Q == AXIS_W
+						'W'
+					#endif
 					); }
 			#endif
 ///
